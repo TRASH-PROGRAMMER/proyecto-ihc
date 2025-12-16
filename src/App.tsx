@@ -31,6 +31,11 @@ import DashboardTurista from "./pages/DashboardTurista";
 import AddLocalidadForm from "./components/forms/AddLocalidadForm";
 import GestionGuias from "@/components/localidad/GestionGuias";
 import HistorialCambios from "@/components/localidad/HistorialCambios";
+import NuevoSitioTuristico from "./pages/NuevoSitioTuristico";
+import NuevaReservacion from "./pages/NuevaReservacion";
+import NuevoGuia from "./pages/NuevoGuia";
+import NuevaActividad from "./pages/NuevaActividad";
+import NuevoVisitante from "./pages/NuevoVisitante";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { AccessibilityProvider } from "./context/AccessibilityContext";
@@ -100,6 +105,11 @@ const AppContent: React.FC = () => {
       <Route path="nosotros" element={<Nosotros />} />
       <Route path="politicas-uso" element={<PoliticasUso />} />
       <Route path="tts-demo" element={<TextToSpeechDemo />} />
+      <Route path="nuevo-sitio-turistico" element={<NuevoSitioTuristico />} />
+      <Route path="nueva-reservacion" element={<NuevaReservacion />} />
+      <Route path="nuevo-guia" element={<NuevoGuia />} />
+      <Route path="nueva-actividad" element={<NuevaActividad />} />
+      <Route path="nuevo-visitante" element={<NuevoVisitante />} />
 
       {/* Reservar protegido */}
       <Route
