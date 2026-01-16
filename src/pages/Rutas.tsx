@@ -1,7 +1,46 @@
 import Footer from "@/components/Footer";
-import { Mountain, Waves, TreePine, Bird, Clock, Users, TrendingUp, MapPin, Calendar, Compass } from "lucide-react";
+import { Mountain, Waves, TreePine, Bird, Clock, Users, TrendingUp, MapPin, Calendar, Compass, Info, Filter, X, HelpCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useState, useEffect } from "react";
 
 const Rutas = () => {
+  const [filtrosActivos, setFiltrosActivos] = useState<any>({});
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  // Simular carga de datos
+  useEffect(() => {
+    setTimeout(() => setLoading(false), 1000);
+  }, []);
+
+  // Atajos de teclado
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'f' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setMostrarFiltros(!mostrarFiltros);
+      }
+      if (e.key === '?') {
+        alert('Atajos de teclado:\n\nCtrl/Cmd + F: Abrir filtros\nEsc: Cerrar filtros');
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [mostrarFiltros]);
+
+  const aplicarFiltro = (categoria: string, valor: string) => {
+    setFiltrosActivos((prev: any) => ({
+      ...prev,
+      [categoria]: prev[categoria]?.includes(valor)
+        ? prev[categoria].filter((v: string) => v !== valor)
+        : [...(prev[categoria] || []), valor]
+    }));
+  };
+
+  const limpiarFiltros = () => {
+    setFiltrosActivos({});
+  };
+
   const categorias = [
     { nombre: "Todas", count: 24 },
     { nombre: "Montaña", count: 8 },
@@ -97,21 +136,134 @@ const Rutas = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 w-full">
-      <div className="pt-12 pb-16 container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Rutas Eco-Turísticas</h1>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Explora rutas cuidadosamente diseñadas que combinan aventura, naturaleza y cultura local. 
-            Todas nuestras rutas apoyan a comunidades locales y promueven el turismo sostenible.
-          </p>
+  const SkeletonCard = () => (
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden animate-pulse">
+      <div className="w-full h-48 bg-gray-200"></div>
+      <div className="p-6">
+        <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+        <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+        <div className="h-16 bg-gray-200 rounded mb-4"></div>
+        <div className="flex gap-2 mb-4">
+          <div className="h-6 bg-gray-200 rounded w-16"></div>
+          <div className="h-6 bg-gray-200 rounded w-16"></div>
         </div>
+      </div>
+    </div>
+  );
 
-        {/* Grid de Rutas */}
+  return (
+    <TooltipProvider>
+      <div className="min-h-screen bg-gray-50 w-full">
+        <div className="pt-12 pb-16 container mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header con Ayuda */}
+          <div className="mb-12">
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-4xl font-bold text-gray-900">Rutas Eco-Turísticas</h1>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <HelpCircle className="w-6 h-6 text-emerald-600" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-xs">
+                  <p className="font-semibold mb-2">Ayuda - Rutas Eco-Turísticas</p>
+                  <p className="text-sm mb-2">Explora rutas diseñadas para combinar aventura con sostenibilidad</p>
+                  <div className="text-xs space-y-1 border-t pt-2 mt-2">
+                    <p><kbd className="px-1 py-0.5 bg-gray-200 rounded">Ctrl/Cmd + F</kbd>: Abrir filtros</p>
+                    <p><kbd className="px-1 py-0.5 bg-gray-200 rounded">?</kbd>: Ver todos los atajos</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <p className="text-lg text-gray-600 max-w-3xl">
+              Explora rutas cuidadosamente diseñadas que combinan aventura, naturaleza y cultura local. 
+              Todas nuestras rutas apoyan a comunidades locales y promueven el turismo sostenible.
+            </p>
+            
+            {/* Botón de Filtros Avanzados */}
+            <div className="mt-6 flex gap-4 items-center">
+              <button 
+                onClick={() => setMostrarFiltros(!mostrarFiltros)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+              >
+                <Filter className="w-4 h-4" />
+                Filtros Avanzados
+              </button>
+              {Object.keys(filtrosActivos).length > 0 && (
+                <button
+                  onClick={limpiarFiltros}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                  Limpiar filtros ({Object.values(filtrosActivos).flat().length})
+                </button>
+              )}
+            </div>
+
+            {/* Panel de Filtros */}
+            {mostrarFiltros && (
+              <div className="mt-4 p-6 bg-white rounded-xl border border-gray-200 shadow-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-lg">Filtros Avanzados</h3>
+                  <button onClick={() => setMostrarFiltros(false)}>
+                    <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {filtros.map((filtro, idx) => (
+                    <div key={idx} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        {filtro.icon}
+                        <label className="font-medium text-sm">{filtro.label}</label>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="w-3 h-3 text-gray-400" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Filtra rutas por {filtro.label.toLowerCase()}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {filtro.opciones.map((opcion, i) => (
+                          <button
+                            key={i}
+                            onClick={() => aplicarFiltro(filtro.label, opcion)}
+                            className={`px-3 py-1.5 rounded-full text-sm transition-all ${
+                              filtrosActivos[filtro.label]?.includes(opcion)
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {opcion}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+        {/* Grid de Rutas con Skeleton Loaders */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {rutas.map((ruta, index) => (
+          {loading ? (
+            // Mostrar skeleton loaders mientras carga
+            Array(6).fill(0).map((_, i) => <SkeletonCard key={i} />)
+          ) : (
+            rutas
+              .filter(ruta => {
+                // Aplicar filtros
+                if (Object.keys(filtrosActivos).length === 0) return true;
+                return Object.entries(filtrosActivos).every(([key, values]: [string, any]) => {
+                  if (!values || values.length === 0) return true;
+                  if (key === 'Dificultad') return values.includes(ruta.dificultad);
+                  if (key === 'Categoría') return values.includes(ruta.categoria);
+                  return true;
+                });
+              })
+              .map((ruta, index) => (
             <div key={index} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col">
               {/* Imagen */}
               <img src={ruta.imagen} alt={ruta.nombre} className="w-full h-48 object-cover" />
@@ -172,17 +324,25 @@ const Rutas = () => {
                     <div className="text-2xl font-bold text-primary">{ruta.precio}</div>
                     <div className="text-xs text-gray-500">por persona</div>
                   </div>
-                  <button className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm font-medium">
-                    Ver Detalles
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm font-medium">
+                        Ver Detalles
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">Ver información completa de la ruta</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
             </div>
-          ))}
+          )))}
         </div>
       </div>
       <Footer />
     </div>
+    </TooltipProvider>
   );
 };
 

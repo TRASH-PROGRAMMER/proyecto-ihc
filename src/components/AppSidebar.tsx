@@ -12,6 +12,7 @@ import {
   User as UserIcon,
   UserPlus,
   LogOut,
+  ClipboardList,
 } from "lucide-react";
 import {
   Sidebar,
@@ -77,6 +78,12 @@ export function AppSidebar() {
         url: "/dashboard/admin",
         icon: Building2,
       });
+      // Agregar gestión de visitantes para admin
+      actionItems.unshift({
+        title: t("Gestión Visitantes"),
+        url: "/visitantes",
+        icon: ClipboardList,
+      });
     }
 
     if (user.rol === "guia") {
@@ -84,6 +91,12 @@ export function AppSidebar() {
         title: t("Dashboard Guía"),
         url: "/dashboard/guia",
         icon: Users,
+      });
+      // Los guías también pueden ver visitantes
+      actionItems.unshift({
+        title: t("Ver Visitantes"),
+        url: "/visitantes",
+        icon: ClipboardList,
       });
     }
   }

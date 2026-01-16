@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,12 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   User,
   FileText,
   Phone,
@@ -32,6 +38,8 @@ import {
   X,
   Plus,
   Upload,
+  HelpCircle,
+  Info,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -107,8 +115,39 @@ export const AddGuiaForm: React.FC = () => {
   const [imagenPreview, setImagenPreview] = useState<string>("");
   const [nuevoIdioma, setNuevoIdioma] = useState("");
   const [nuevaCertificacion, setNuevaCertificacion] = useState("");
+  const [realTimeErrors, setRealTimeErrors] = useState<{ [key: string]: string }>({});
+  const [touchedFields, setTouchedFields] = useState<{ [key: string]: boolean }>({});
 
   const formValues = watch();
+
+  // ISO 9241-11: Eficiencia - Atajos de teclado
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Ctrl+Enter o Cmd+Enter para guardar
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (progreso === 100) {
+          handleSubmit(onSubmit)();
+        } else {
+          toast({
+            title: "Formulario incompleto",
+            description: `Completa todos los campos (${progreso}% completado)`,
+            variant: "destructive",
+          });
+        }
+      }
+      // Esc para cancelar
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (confirm('¿Deseas cancelar? Los cambios no guardados se perderán.')) {
+          navigate(-1);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [progreso, navigate, handleSubmit]);
 
   // Calcular progreso del formulario
   const progreso = useMemo(() => {
@@ -245,6 +284,46 @@ export const AddGuiaForm: React.FC = () => {
     // navigate("/dashboard/admin");
   };
 
+  // ISO 9241-11: Protección contra errores - Validación en tiempo real
+  const validateEmailRealTime = (email: string) => {
+    if (!email) return;
+    const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+    if (!emailRegex.test(email)) {
+      setRealTimeErrors(prev => ({ ...prev, correo: 'Formato de email inválido' }));
+    } else {
+      setRealTimeErrors(prev => {
+        const { correo, ...rest } = prev;
+        return rest;
+      });
+    }
+  };
+
+  const validatePhoneRealTime = (phone: string) => {
+    if (!phone) return;
+    const telefonoRegex = /^(\+593|0)?9\d{8,9}$/;
+    if (!telefonoRegex.test(phone)) {
+      setRealTimeErrors(prev => ({ ...prev, telefono: 'Formato: 0987654321 o +593987654321' }));
+    } else {
+      setRealTimeErrors(prev => {
+        const { telefono, ...rest } = prev;
+        return rest;
+      });
+    }
+  };
+
+  // Debounce para validación en tiempo real
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (touchedFields.correo && formValues.correo) {
+        validateEmailRealTime(formValues.correo);
+      }
+      if (touchedFields.telefono && formValues.telefono) {
+        validatePhoneRealTime(formValues.telefono);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [formValues.correo, formValues.telefono, touchedFields]);
+
   // Validar teléfono
   const validarTelefono = (valor: string) => {
     const telefonoRegex = /^(\+593|0)?9\d{8,9}$/;
@@ -259,27 +338,52 @@ export const AddGuiaForm: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      {/* Encabezado */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <User className="h-8 w-8 text-primary" />
-            Nuevo Guía Turístico
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Registra la información del guía turístico
-          </p>
+    <TooltipProvider>
+      <div className="max-w-4xl mx-auto p-6 space-y-6">
+        {/* Encabezado */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-3xl font-bold flex items-center gap-2">
+                <User className="h-8 w-8 text-primary" />
+                Nuevo Guía Turístico
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Registra la información del guía turístico
+              </p>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <HelpCircle className="h-5 w-5 text-muted-foreground" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-xs">
+                <p className="font-semibold mb-1">Atajos de teclado:</p>
+                <p className="text-xs">• Ctrl+Enter: Guardar formulario</p>
+                <p className="text-xs">• Esc: Cancelar y volver</p>
+                <p className="text-xs">• Tab: Navegar entre campos</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (confirm('¿Deseas cancelar? Los cambios no guardados se perderán.')) {
+                    navigate(-1);
+                  }
+                }}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Volver
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Cancelar y volver (Esc)</TooltipContent>
+          </Tooltip>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Volver
-        </Button>
-      </div>
 
       {/* Barra de progreso */}
       <Card>
@@ -315,9 +419,20 @@ export const AddGuiaForm: React.FC = () => {
           <CardContent className="space-y-4">
             {/* Nombre completo */}
             <div className="space-y-2">
-              <Label htmlFor="nombreCompleto">
-                Nombre completo <span className="text-red-500">*</span>
-              </Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="nombreCompleto">
+                  Nombre completo <span className="text-red-500">*</span>
+                </Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Ingresa el nombre completo del guía</p>
+                    <p className="text-xs text-muted-foreground">Mínimo 5 caracteres</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <Input
                 id="nombreCompleto"
                 placeholder="Ej: Juan Carlos Rodríguez"
@@ -330,7 +445,10 @@ export const AddGuiaForm: React.FC = () => {
                 })}
               />
               {errors.nombreCompleto && (
-                <p className="text-sm text-red-500">{errors.nombreCompleto.message}</p>
+                <p className="text-sm text-red-500 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {errors.nombreCompleto.message}
+                </p>
               )}
             </div>
 
@@ -381,9 +499,20 @@ export const AddGuiaForm: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Teléfono */}
               <div className="space-y-2">
-                <Label htmlFor="telefono">
-                  Teléfono <span className="text-red-500">*</span>
-                </Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="telefono">
+                    Teléfono <span className="text-red-500">*</span>
+                  </Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Formato: 0987654321 o +593987654321</p>
+                      <p className="text-xs text-muted-foreground">Válido para Ecuador</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <div className="relative">
                   <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -394,18 +523,33 @@ export const AddGuiaForm: React.FC = () => {
                       required: "El teléfono es obligatorio",
                       validate: validarTelefono,
                     })}
+                    onBlur={() => setTouchedFields(prev => ({ ...prev, telefono: true }))}
                   />
                 </div>
-                {errors.telefono && (
-                  <p className="text-sm text-red-500">{errors.telefono.message}</p>
+                {(errors.telefono || realTimeErrors.telefono) && (
+                  <p className="text-sm text-red-500 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.telefono?.message || realTimeErrors.telefono}
+                  </p>
                 )}
               </div>
 
               {/* Correo */}
               <div className="space-y-2">
-                <Label htmlFor="correo">
-                  Correo electrónico <span className="text-red-500">*</span>
-                </Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="correo">
+                    Correo electrónico <span className="text-red-500">*</span>
+                  </Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Dirección de correo válida</p>
+                      <p className="text-xs text-muted-foreground">Ej: guia@email.com</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -420,10 +564,14 @@ export const AddGuiaForm: React.FC = () => {
                         message: "Correo inválido",
                       },
                     })}
+                    onBlur={() => setTouchedFields(prev => ({ ...prev, correo: true }))}
                   />
                 </div>
-                {errors.correo && (
-                  <p className="text-sm text-red-500">{errors.correo.message}</p>
+                {(errors.correo || realTimeErrors.correo) && (
+                  <p className="text-sm text-red-500 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.correo?.message || realTimeErrors.correo}
+                  </p>
                 )}
               </div>
             </div>
@@ -713,25 +861,44 @@ export const AddGuiaForm: React.FC = () => {
 
         {/* Botones de acción */}
         <div className="flex gap-4 justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate(-1)}
-            className="w-32"
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            disabled={progreso < 100}
-            className="w-32 flex items-center gap-2"
-          >
-            <Save className="h-4 w-4" />
-            Guardar
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  if (confirm('¿Deseas cancelar? Los cambios no guardados se perderán.')) {
+                    navigate(-1);
+                  }
+                }}
+                className="w-32"
+              >
+                Cancelar
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Cancelar formulario (Esc)</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="submit"
+                disabled={progreso < 100}
+                className="w-32 flex items-center gap-2"
+              >
+                <Save className="h-4 w-4" />
+                Guardar
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {progreso === 100 
+                ? "Guardar guía turístico (Ctrl+Enter)"
+                : `Completa el formulario (${progreso}% completado)`}
+            </TooltipContent>
+          </Tooltip>
         </div>
       </form>
     </div>
+    </TooltipProvider>
   );
 };
 

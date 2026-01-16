@@ -36,6 +36,7 @@ import NuevaReservacion from "./pages/NuevaReservacion";
 import NuevoGuia from "./pages/NuevoGuia";
 import NuevaActividad from "./pages/NuevaActividad";
 import NuevoVisitante from "./pages/NuevoVisitante";
+import GestionVisitantes from "./pages/GestionVisitantes";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { AccessibilityProvider } from "./context/AccessibilityContext";
@@ -110,6 +111,16 @@ const AppContent: React.FC = () => {
       <Route path="nuevo-guia" element={<NuevoGuia />} />
       <Route path="nueva-actividad" element={<NuevaActividad />} />
       <Route path="nuevo-visitante" element={<NuevoVisitante />} />
+      
+      {/* Gestión de visitantes con tabla */}
+      <Route
+        path="visitantes"
+        element={
+          <ProtectedRoute roles={["administrador", "guia"]}>
+            <GestionVisitantes />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Reservar protegido */}
       <Route

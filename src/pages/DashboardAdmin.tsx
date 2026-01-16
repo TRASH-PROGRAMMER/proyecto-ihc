@@ -4,19 +4,65 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { PlusCircle, Trash2, ArrowRight, Info, Users, History, ArrowLeft, MapPin, Calendar } from "lucide-react";
+import { PlusCircle, Trash2, ArrowRight, Info, Users, History, ArrowLeft, MapPin, Calendar, Bell, Settings, Zap, TrendingUp, Eye, HelpCircle, ChevronDown, ChevronUp, Grid } from "lucide-react";
 import { getAllLocalidades, deleteLocalidad, LocalidadData } from "@/utils/localidadStorage";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function DashboardAdmin() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [localidades, setLocalidades] = useState<LocalidadData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [notificaciones, setNotificaciones] = useState([
+    { id: 1, tipo: 'info', mensaje: 'Nueva localidad pendiente de revisión', tiempo: 'Hace 5 min', leido: false },
+    { id: 2, tipo: 'success', mensaje: 'Localidad "Montecristi" aprobada', tiempo: 'Hace 1 hora', leido: false },
+    { id: 3, tipo: 'warning', mensaje: 'Actualización del sistema disponible', tiempo: 'Hace 2 horas', leido: true },
+  ]);
+  const [mostrarNotificaciones, setMostrarNotificaciones] = useState(false);
+  const [widgetsVisibles, setWidgetsVisibles] = useState({
+    estadisticas: true,
+    actividad: true,
+    accesosRapidos: true,
+  });
 
   // Cargar localidades al montar el componente
   useEffect(() => {
     loadLocalidades();
   }, []);
+
+  // Atajos de teclado
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + N: Nueva localidad
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        handleAddLocalidad();
+      }
+      // Ctrl/Cmd + K: Mostrar/ocultar notificaciones
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setMostrarNotificaciones(!mostrarNotificaciones);
+      }
+      // ?: Mostrar ayuda
+      if (e.key === '?') {
+        alert('Atajos de teclado:\n\nCtrl/Cmd + N: Nueva localidad\nCtrl/Cmd + K: Notificaciones\nCtrl/Cmd + 1-3: Saltar a widgets\n?: Ver ayuda');
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [mostrarNotificaciones]);
+
+  const marcarNotificacionLeida = (id: number) => {
+    setNotificaciones(prev => 
+      prev.map(n => n.id === id ? { ...n, leido: true } : n)
+    );
+  };
+
+  const toggleWidget = (widget: keyof typeof widgetsVisibles) => {
+    setWidgetsVisibles(prev => ({ ...prev, [widget]: !prev[widget] }));
+  };
+
+  const notificacionesNoLeidas = notificaciones.filter(n => !n.leido).length;
 
   const loadLocalidades = () => {
     setIsLoading(true);
@@ -67,33 +113,270 @@ export default function DashboardAdmin() {
 
   // Vista principal del dashboard
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6">
-      <div className="w-full max-w-7xl mx-auto">
-        {/* Header mejorado */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
-                Panel de Administración
-              </h1>
-              <p className="text-gray-600 flex items-center gap-2">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                  👤 {user?.nombre}
-                </span>
-                <span className="text-sm">
-                  {localidades.length} {localidades.length === 1 ? 'localidad registrada' : 'localidades registradas'}
-                </span>
-              </p>
+    <TooltipProvider>
+      <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6">
+        <div className="w-full max-w-7xl mx-auto">
+          {/* Header mejorado con notificaciones */}
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+                  Panel de Administración
+                </h1>
+                <p className="text-gray-600 flex items-center gap-2">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    👤 {user?.nombre}
+                  </span>
+                  <span className="text-sm">
+                    {localidades.length} {localidades.length === 1 ? 'localidad registrada' : 'localidades registradas'}
+                  </span>
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                {/* Notificaciones */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setMostrarNotificaciones(!mostrarNotificaciones)}
+                      className="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <Bell className="w-5 h-5 text-gray-600" />
+                      {notificacionesNoLeidas > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                          {notificacionesNoLeidas}
+                        </span>
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Notificaciones ({notificacionesNoLeidas} nuevas)</p>
+                    <p className="text-xs text-gray-400">Ctrl/Cmd + K</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* Ayuda */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => alert('Atajos de teclado:\n\nCtrl/Cmd + N: Nueva localidad\nCtrl/Cmd + K: Notificaciones\n?: Ver ayuda')}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <HelpCircle className="w-5 h-5 text-gray-600" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Ayuda y atajos de teclado</p>
+                    <p className="text-xs text-gray-400">Presiona ?</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* Configurar widgets */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                      <Settings className="w-5 h-5 text-gray-600" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Configurar dashboard</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleAddLocalidad}
+                      className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                      <PlusCircle className="w-5 h-5" />
+                      Nueva Localidad
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Crear nueva localidad</p>
+                    <p className="text-xs text-gray-400">Ctrl/Cmd + N</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
-            <Button
-              onClick={handleAddLocalidad}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 self-start sm:self-auto"
-            >
-              <PlusCircle className="w-5 h-5" />
-              Nueva Localidad
-            </Button>
+
+            {/* Panel de notificaciones */}
+            {mostrarNotificaciones && (
+              <div className="mt-4 border-t pt-4 animate-in slide-in-from-top-2">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-sm">Notificaciones</h3>
+                  <button
+                    onClick={() => setNotificaciones(prev => prev.map(n => ({ ...n, leido: true })))}
+                    className="text-xs text-emerald-600 hover:text-emerald-700"
+                  >
+                    Marcar todas como leídas
+                  </button>
+                </div>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {notificaciones.map(notif => (
+                    <div
+                      key={notif.id}
+                      onClick={() => marcarNotificacionLeida(notif.id)}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                        notif.leido ? 'bg-gray-50 border-gray-200' : 'bg-blue-50 border-blue-200'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2">
+                        <Bell className={`w-4 h-4 mt-0.5 ${
+                          notif.leido ? 'text-gray-400' : 'text-blue-600'
+                        }`} />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{notif.mensaje}</p>
+                          <p className="text-xs text-gray-500">{notif.tiempo}</p>
+                        </div>
+                        {!notif.leido && <div className="w-2 h-2 bg-blue-600 rounded-full"></div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+
+          {/* Widgets de estadísticas */}
+          {widgetsVisibles.estadisticas && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-600">Total Localidades</CardTitle>
+                      <MapPin className="w-5 h-5 text-emerald-600" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{localidades.length}</div>
+                      <p className="text-xs text-gray-500 mt-1">+2 esta semana</p>
+                    </CardContent>
+                  </Card>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">Número total de localidades registradas</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-600">Guías Activos</CardTitle>
+                      <Users className="w-5 h-5 text-blue-600" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">24</div>
+                      <p className="text-xs text-gray-500 mt-1">↑ 12% vs mes pasado</p>
+                    </CardContent>
+                  </Card>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">Guías certificados activos en la plataforma</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-600">Visitantes/Mes</CardTitle>
+                      <TrendingUp className="w-5 h-5 text-orange-600" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">1.2K</div>
+                      <p className="text-xs text-gray-500 mt-1">↑ 8% vs mes pasado</p>
+                    </CardContent>
+                  </Card>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">Visitantes mensuales en todas las rutas</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          )}
+
+          {/* Accesos rápidos */}
+          {widgetsVisibles.accesosRapidos && (
+            <Card className="mb-6">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-yellow-600" />
+                  <CardTitle className="text-lg">Accesos Rápidos</CardTitle>
+                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => toggleWidget('accesosRapidos')}
+                      className="p-1 hover:bg-gray-100 rounded"
+                    >
+                      <ChevronUp className="w-4 h-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Ocultar widget</p>
+                  </TooltipContent>
+                </Tooltip>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={handleAddLocalidad}
+                        className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-dashed border-emerald-300 hover:border-emerald-500 hover:bg-emerald-50 transition-all"
+                      >
+                        <PlusCircle className="w-6 h-6 text-emerald-600" />
+                        <span className="text-sm font-medium">Nueva Localidad</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">Crear nueva localidad turística</p>
+                      <p className="text-xs text-gray-400">Ctrl/Cmd + N</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-all">
+                        <Users className="w-6 h-6 text-blue-600" />
+                        <span className="text-sm font-medium">Ver Guías</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">Gestionar guías certificados</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-gray-200 hover:border-orange-400 hover:bg-orange-50 transition-all">
+                        <TrendingUp className="w-6 h-6 text-orange-600" />
+                        <span className="text-sm font-medium">Estadísticas</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">Ver estadísticas detalladas</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-gray-200 hover:border-purple-400 hover:bg-purple-50 transition-all">
+                        <Settings className="w-6 h-6 text-purple-600" />
+                        <span className="text-sm font-medium">Configuración</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">Configurar el sistema</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
         {/* Lista de localidades existentes */}
         {localidades.length === 0 ? (
@@ -204,5 +487,6 @@ export default function DashboardAdmin() {
         )}
       </div>
     </div>
+    </TooltipProvider>
   );
 }

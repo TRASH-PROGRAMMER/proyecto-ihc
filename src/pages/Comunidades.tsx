@@ -1,7 +1,82 @@
 import Footer from "@/components/Footer";
-import { Heart, Users, Leaf, Home, MapPin, Phone, Mail, Calendar } from "lucide-react";
+import { Heart, Users, Leaf, Home, MapPin, Phone, Mail, Calendar, Info, Filter, X, HelpCircle, CheckCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useState, useEffect } from "react";
 
 const Comunidades = () => {
+  const [filtrosActivos, setFiltrosActivos] = useState<any>({});
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  // Simular carga de datos
+  useEffect(() => {
+    setTimeout(() => setLoading(false), 1000);
+  }, []);
+
+  // Atajos de teclado
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'f' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setMostrarFiltros(!mostrarFiltros);
+      }
+      if (e.key === '?') {
+        alert('Atajos de teclado:\n\nCtrl/Cmd + F: Abrir filtros\nEsc: Cerrar filtros\n?: Ver ayuda completa');
+      }
+      if (e.key === 'Escape' && mostrarFiltros) {
+        setMostrarFiltros(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [mostrarFiltros]);
+
+  const aplicarFiltro = (categoria: string, valor: string) => {
+    setFiltrosActivos((prev: any) => ({
+      ...prev,
+      [categoria]: prev[categoria]?.includes(valor)
+        ? prev[categoria].filter((v: string) => v !== valor)
+        : [...(prev[categoria] || []), valor]
+    }));
+  };
+
+  const limpiarFiltros = () => {
+    setFiltrosActivos({});
+  };
+
+  const filtrosDisponibles = [
+    { 
+      label: "Tipo", 
+      icon: <Home className="w-4 h-4" />, 
+      opciones: ["Agrícola", "Costera", "Artesanal", "Ecológica"]
+    },
+    { 
+      label: "Actividades", 
+      icon: <Leaf className="w-4 h-4" />, 
+      opciones: ["Agroturismo", "Pesca", "Artesanías", "Conservación"]
+    },
+    { 
+      label: "Tamaño", 
+      icon: <Users className="w-4 h-4" />, 
+      opciones: ["Pequeña (50-100)", "Mediana (100-200)", "Grande (200+)"]
+    }
+  ];
+
+  const SkeletonCard = () => (
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden animate-pulse">
+      <div className="w-full h-48 bg-gray-200"></div>
+      <div className="p-6 space-y-4">
+        <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+        <div className="h-16 bg-gray-200 rounded"></div>
+        <div className="space-y-2">
+          <div className="h-4 bg-gray-200 rounded"></div>
+          <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+        </div>
+        <div className="h-10 bg-gray-200 rounded"></div>
+      </div>
+    </div>
+  );
   const comunidades = [
     {
       nombre: "Comunidad San Isidro",
@@ -66,16 +141,108 @@ const Comunidades = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 w-full">
-      <div className="pt-12 pb-16 container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Comunidades Aliadas</h1>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Descubre comunidades rurales auténticas que abren sus puertas para compartir su cultura, 
-            tradiciones y forma de vida. El turismo comunitario genera desarrollo local sostenible.
-          </p>
-        </div>
+    <TooltipProvider>
+      <div className="min-h-screen bg-gray-50 w-full">
+        <div className="pt-12 pb-16 container mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header con Ayuda Contextual */}
+          <div className="mb-12">
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-4xl font-bold text-gray-900">Comunidades Aliadas</h1>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <HelpCircle className="w-6 h-6 text-emerald-600" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-xs">
+                  <p className="font-semibold mb-2">Ayuda - Comunidades</p>
+                  <p className="text-sm mb-2">Descubre comunidades auténticas comprometidas con el turismo sostenible</p>
+                  <div className="text-xs space-y-1 border-t pt-2 mt-2">
+                    <p><kbd className="px-1 py-0.5 bg-gray-200 rounded">Ctrl/Cmd + F</kbd>: Abrir filtros</p>
+                    <p><kbd className="px-1 py-0.5 bg-gray-200 rounded">Esc</kbd>: Cerrar filtros</p>
+                    <p><kbd className="px-1 py-0.5 bg-gray-200 rounded">?</kbd>: Ver ayuda</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <p className="text-lg text-gray-600 max-w-3xl">
+              Descubre comunidades rurales auténticas que abren sus puertas para compartir su cultura, 
+              tradiciones y forma de vida. El turismo comunitario genera desarrollo local sostenible.
+            </p>
+            
+            {/* Filtros Avanzados */}
+            <div className="mt-6 flex gap-4 items-center">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    onClick={() => setMostrarFiltros(!mostrarFiltros)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                  >
+                    <Filter className="w-4 h-4" />
+                    Filtros Avanzados
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">Filtra comunidades por tipo, actividades y tamaño</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              {Object.keys(filtrosActivos).length > 0 && (
+                <button
+                  onClick={limpiarFiltros}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                  Limpiar filtros ({Object.values(filtrosActivos).flat().length})
+                </button>
+              )}
+            </div>
+
+            {/* Panel de Filtros */}
+            {mostrarFiltros && (
+              <div className="mt-4 p-6 bg-white rounded-xl border border-gray-200 shadow-lg animate-in slide-in-from-top-2">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-lg">Filtrar Comunidades</h3>
+                  <button onClick={() => setMostrarFiltros(false)}>
+                    <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {filtrosDisponibles.map((filtro, idx) => (
+                    <div key={idx} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        {filtro.icon}
+                        <label className="font-medium text-sm">{filtro.label}</label>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="w-3 h-3 text-gray-400" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Filtra por {filtro.label.toLowerCase()}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {filtro.opciones.map((opcion, i) => (
+                          <button
+                            key={i}
+                            onClick={() => aplicarFiltro(filtro.label, opcion)}
+                            className={`px-3 py-1.5 rounded-full text-sm transition-all ${
+                              filtrosActivos[filtro.label]?.includes(opcion)
+                                ? 'bg-emerald-600 text-white shadow-sm'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {opcion}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
         {/* Beneficios */}
         <div className="mb-16">
@@ -91,11 +258,14 @@ const Comunidades = () => {
           </div>
         </div>
 
-        {/* Comunidades */}
+        {/* Comunidades con Skeleton Loaders */}
         <div className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-center">Nuestras Comunidades</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {comunidades.map((comunidad, index) => (
+            {loading ? (
+              Array(6).fill(0).map((_, i) => <SkeletonCard key={i} />)
+            ) : (
+              comunidades.map((comunidad, index) => (
               <div key={index} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow hover:shadow-lg transition-shadow">
                 <img src={comunidad.imagen} alt={comunidad.nombre} className="w-full h-48 object-cover" />
                 <div className="p-6">
@@ -119,18 +289,35 @@ const Comunidades = () => {
                       </span>
                     ))}
                   </div>
-                  <button className="w-full bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium">
-                    Conocer más
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="w-full bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium">
+                        Conocer más
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">Ver detalles completos y opciones de contacto</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
-            ))}
+            )))}
           </div>
         </div>
 
-        {/* Cómo Participar */}
+        {/* Cómo Participar con Tooltips */}
         <div className="mb-16 text-center">
-          <h2 className="text-3xl font-bold mb-8">¿Cómo Participar?</h2>
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <h2 className="text-3xl font-bold">¿Cómo Participar?</h2>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="w-5 h-5 text-emerald-600" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">Proceso simple en 4 pasos para vivir una experiencia auténtica</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {comoParticipar.map((item, index) => (
               <div key={index} className="bg-white p-6 rounded-xl border border-gray-200 shadow hover:shadow-lg transition-shadow">
@@ -146,6 +333,7 @@ const Comunidades = () => {
       </div>
       <Footer />
     </div>
+    </TooltipProvider>
   );
 };
 
