@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import Rutas from "./pages/Rutas";
 import Guias from "./pages/Guias";
 import Comunidades from "./pages/Comunidades";
+import ComunidadDetalle from "./pages/ComunidadDetalle";
 import Nosotros from "./pages/Nosotros";
 import Reservar from "./pages/Reservar";
 import LoginPage from "./pages/LoginPage";
@@ -103,6 +104,7 @@ const AppContent: React.FC = () => {
       <Route path="rutas" element={<Rutas />} />
       <Route path="guias" element={<Guias />} />
       <Route path="comunidades" element={<Comunidades />} />
+      <Route path="comunidades/:id" element={<ComunidadDetalle />} />
       <Route path="nosotros" element={<Nosotros />} />
       <Route path="politicas-uso" element={<PoliticasUso />} />
       <Route path="tts-demo" element={<TextToSpeechDemo />} />

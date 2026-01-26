@@ -1,12 +1,15 @@
 import Footer from "@/components/Footer";
 import { Mountain, Waves, TreePine, Bird, Clock, Users, TrendingUp, MapPin, Calendar, Compass, Info, Filter, X, HelpCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogTrigger, AlertDialogCancel } from "@/components/ui/alert-dialog";
 import { useState, useEffect } from "react";
 
 const Rutas = () => {
   const [filtrosActivos, setFiltrosActivos] = useState<any>({});
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [rutaSeleccionada, setRutaSeleccionada] = useState<any>(null);
   
   // Simular carga de datos
   useEffect(() => {
@@ -325,14 +328,50 @@ const Rutas = () => {
                     <div className="text-xs text-gray-500">por persona</div>
                   </div>
                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm font-medium">
-                        Ver Detalles
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-xs">Ver información completa de la ruta</p>
-                    </TooltipContent>
+                    <AlertDialog open={modalOpen} onOpenChange={setModalOpen}>
+                      <TooltipTrigger asChild>
+                        <button
+                          className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+                          onClick={() => { setRutaSeleccionada(ruta); setModalOpen(true); }}
+                        >
+                          Ver Detalles
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">Ver información completa de la ruta</p>
+                      </TooltipContent>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>{rutaSeleccionada?.nombre}</AlertDialogTitle>
+                        </AlertDialogHeader>
+                        <div className="mb-4">
+                          <img src={rutaSeleccionada?.imagen} alt={rutaSeleccionada?.nombre} className="w-full h-48 object-cover rounded mb-2" />
+                          <div className="text-sm text-gray-600 mb-2">{rutaSeleccionada?.ubicacion}</div>
+                          <div className="mb-2">{rutaSeleccionada?.descripcion}</div>
+                          <div className="mb-2">
+                            <span className="font-semibold">Incluye:</span>
+                            <ul className="list-disc list-inside ml-2">
+                              {rutaSeleccionada?.destacados?.map((item: string, idx: number) => (
+                                <li key={idx}>{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {rutaSeleccionada?.tags?.map((tag: string, idx: number) => (
+                              <span key={idx} className="bg-gray-200 rounded px-2 py-1 text-xs">{tag}</span>
+                            ))}
+                          </div>
+                          <div className="flex gap-4 text-xs text-gray-700 mb-2">
+                            <span><b>Duración:</b> {rutaSeleccionada?.duracion}</span>
+                            <span><b>Dificultad:</b> {rutaSeleccionada?.dificultad}</span>
+                            <span><b>Participantes:</b> {rutaSeleccionada?.participantes}</span>
+                            <span><b>Temporada:</b> {rutaSeleccionada?.temporada}</span>
+                          </div>
+                          <div className="text-primary font-bold text-lg">{rutaSeleccionada?.precio} <span className="text-xs font-normal text-gray-500">por persona</span></div>
+                        </div>
+                        <AlertDialogCancel className="mt-2">Cerrar</AlertDialogCancel>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </Tooltip>
                 </div>
               </div>

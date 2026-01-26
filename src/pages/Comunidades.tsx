@@ -2,8 +2,10 @@ import Footer from "@/components/Footer";
 import { Heart, Users, Leaf, Home, MapPin, Phone, Mail, Calendar, Info, Filter, X, HelpCircle, CheckCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Comunidades = () => {
+  const navigate = useNavigate();
   const [filtrosActivos, setFiltrosActivos] = useState<any>({});
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -291,7 +293,10 @@ const Comunidades = () => {
                   </div>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <button className="w-full bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium">
+                      <button
+                        onClick={() => navigate(`/comunidades/${index}`, { state: { comunidad } })}
+                        className="w-full bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+                      >
                         Conocer más
                       </button>
                     </TooltipTrigger>
